@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUUBER vs Batmaid Cost Calculator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --color-bg: #ffffff;
+            --color-text-main: #1e293b;
+            --color-text-muted: #3232326c;
+            --color-primary: #009ED9;
+            --color-card-bg: #E0F7FA;
+            --color-batmaid: #8DE0FF;
+            --color-suuber: #8DE0FF;
+            --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --font-family: 'DM Sans', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+        }
+
+        /* --- Main Container --- */
+        .app-container {
+            background-color: var(--color-card-bg);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                flex-direction: row;
+                margin: 3rem;
+            }
+        }
+
+        /* --- Layout Panels --- */
+        .panel-left {
+            padding: 20px;
+            position: relative;
+        }
+
+        .panel-right {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (min-width: 768px) {
+            .panel-left {
+                width: 60%;
+                padding: 20px;
+            }
+            .panel-right {
+                width: 40%;
+                padding: 20px;
+            }
+        }
+
+        /* --- Typography --- */
+        h1 {
+            font-size: 80px;
+            font-weight: 500;
+            margin: 0 0 0.5rem 0;
+            color: var(--color-text-main);
+        }
+
+        h2 {
+            font-size: 40px;
+            font-weight: 600;
+            margin: 0 0 2rem 0;
+            color: var(--color-text-main);
+        }
+
+        h3 {
+            font-size: 30px;
+            font-weight: 600;
+            margin: 0 0 1.25rem 0;
+            color: var(--color-text-main);
+        }
+
+        h4 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 0 1rem 0;
+            color: var(--color-text-main);
+        }
+
+        p {
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .text-sm { font-size: ; }
+        .text-xs { font-size: 0.75rem; }
+        .text-muted { color: var(--color-text-muted); }
+        .font-medium { font-weight: 500; }
+        .font-bold { font-weight: 700; }
+        .mt-4 { margin-top: 1rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+
+        /* --- Input Grid --- */
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-top: 2.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .input-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 3rem;
+            }   
+        }
+
+        /* --- Slider Component --- */
+        .slider-container {
+            position: relative;
+            padding-top: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 0.5rem;
+        }
+
+        .slider-wrapper {
+            position: relative;
+            width: 100%;
+            height: 40px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Progress Bar behind slider */
+        #slider-progress {
+            position: absolute;
+            left: 0;
+            height: 6px;
+            background-color: var(--color-primary);
+            border-radius: 999px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Floating Bubble */
+        #slider-bubble {
+            position: absolute;
+            top: -24px;
+            background-color: var(--color-primary);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            transform: translateX(-50%);
+            pointer-events: none;
+            transition: left 0.1s ease;
+            white-space: nowrap;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* Native Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 100%;
+            background: transparent;
+            cursor: pointer;
+            z-index: 20;
+            position: relative;
+            margin: 0;
+        }
+        input[type=range]:focus { outline: none; }
+
+        /* Thumb */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            border: 4px solid #ffffff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            margin-top: -9px; /* Centers thumb on track */
+            position: relative;
+            z-index: 30;
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            border: 4px solid #ffffff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            cursor: pointer;
+            z-index: 30;
+            border: none; /* Reset */
+        }
+
+        /* Track */
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #E2E8F0;
+            border-radius: 999px;
+        }
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 6px;
+            background: #E2E8F0;
+            border-radius: 999px;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        /* --- Radio Groups --- */
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .radio-label:hover span {
+            color: var(--color-text-main);
+        }
+
+        .custom-radio {
+            display: none; /* Hide default radio */
+        }
+
+        .radio-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            margin-right: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.2s;
+        }
+
+        .radio-label:hover .radio-circle {
+            border-color: var(--color-primary);
+        }
+
+        .radio-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--color-primary);
+            transform: scale(0);
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .custom-radio:checked + .radio-circle {
+            border-color: var(--color-primary);
+        }
+
+        .custom-radio:checked + .radio-circle .radio-dot {
+            transform: scale(1);
+        }
+
+        .radio-text {
+            color: #475569;
+            transition: color 0.2s;
+        }
+
+        /* --- Result Cards --- */
+        .results-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .result-card {
+            border-radius: 16px;
+            padding: 1.5rem;
+            color: var(--color-text-main);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-batmaid { background-color: var(--color-batmaid); }
+        .card-suuber { 
+            background-color: var(--color-suuber); 
+            position: relative;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .card-suuber .card-title { text-transform: uppercase; }
+
+        .card-price {
+            font-size: 1.875rem; /* 3xl */
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .price-label {
+            font-size: 0.875rem;
+            opacity: 0.8;
+            margin-bottom: 0.25rem;
+        }
+
+        /* --- Footer Stats --- */
+        .stats-footer {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-row:last-child { margin-bottom: 0; }
+
+        .stat-label { color: #475569; font-weight: 500; }
+        .stat-value { color: #0f172a; font-weight: 700; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Main Container -->
+    <div class="app-container">
+        
+        <!-- Left Panel: Inputs -->
+        <div class="panel-left">
+            
+            <h1>Konstenrechner SUUBER vs Batmaid</h1>
+            
+            <!-- Slider Section -->
+            <div class="slider-container">
+                <div class="slider-header">
+                    <label class="font-medium text-lg">Anzahl Stunden</label>
+                </div>
+                
+                <div class="slider-wrapper">
+                    <!-- Dynamic Progress Bar -->
+                    <div id="slider-progress" style="width: 16.66%"></div>
+                    
+                    <!-- Floating Bubble -->
+                    <div id="slider-bubble" style="left: 16.66%">
+                        <span id="hours-display">3</span>
+                    </div>
+
+                    <input type="range" id="hours-input" min="2" max="8" step="1" value="3">
+                </div>
+
+                <div class="slider-labels">
+                    <span>2 Hours</span>
+                    <span>8 Hours</span>
+                </div>
+            </div>
+
+            <div class="input-grid">
+                
+                <!-- Frequency Selection -->
+                <div>
+                    <h3>How often should cleaning be done</h3>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="frequency" value="monthly" class="custom-radio">
+                            <div class="radio-circle"><div class="radio-dot"></div></div>
+                            <span class="radio-text">once a month</span>
+                        </label>
+
+                        <label class="radio-label">
+                            <input type="radio" name="frequency" value="twice_monthly" class="custom-radio">
+                            <div class="radio-circle"><div class="radio-dot"></div></div>
+                            <span class="radio-text">twice a month</span>
+                        </label>
+
+                        <label class="radio-label">
+                            <input type="radio" name="frequency" value="weekly" class="custom-radio" checked>
+                            <div class="radio-circle"><div class="radio-dot"></div></div>
+                            <span class="radio-text">once a week</span>
+                        </label>
+                    </div>
+                    <div class="mt-4 text-xs text-muted">
+                        Number of appointments per month: <span id="appointments-display">4.33</span>
+                    </div>
+                </div>
+
+                <!-- Subscription Selection -->
+                <div>
+                    <h3>Select subscription</h3>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="subscription" value="flexible" class="custom-radio">
+                            <div class="radio-circle"><div class="radio-dot"></div></div>
+                            <span class="radio-text">Flexible</span>
+                        </label>
+
+                        <label class="radio-label">
+                            <input type="radio" name="subscription" value="3_months" class="custom-radio">
+                            <div class="radio-circle"><div class="radio-dot"></div></div>
+                            <span class="radio-text">Plan for 3 months</span>
+                        </label>
+
+                        <label class="radio-label">
+                            <input type="radio" name="subscription" value="12_months" class="custom-radio" checked>
+                            <div class="radio-circle"><div class="radio-dot"></div></div>
+                            <span class="radio-text">Plan for 12 months</span>
+                        </label>
+                    </div>
+                    <p class="mt-4 text-xs text-muted" style="line-height: 1.5;">
+                        If you cancel your subscription early, cancellation fees will apply.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Results -->
+        <div class="panel-right">
+            
+            <h2>Total costs</h2>
+
+            <div class="results-container">
+                
+                <!-- Batmaid Card -->
+                <div class="result-card card-batmaid">
+                    <div class="card-title">Batmaid</div>
+                    <p class="price-label">Total Cost</p>
+                    <div class="card-price" id="batmaid-total">CHF 00.00</div>
+                </div>
+
+                <!-- SUUBER Card -->
+                <div class="result-card card-suuber">
+                    <div class="card-title">SUUBER</div>
+                    <p class="price-label">Total Cost</p>
+                    <div class="card-price" id="suuber-total">CHF 00.00</div>
+                </div>
+            </div>
+
+            <!-- Bottom Hourly Rate Section -->
+            <div class="stats-footer">
+                <div class="stat-row">
+                    <span class="stat-label">Batmaid Total Cost per hour</span>
+                    <span class="stat-value" id="batmaid-hourly">CHF 00.00</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">SUUBER Total Cost per hour</span>
+                    <span class="stat-value" id="suuber-hourly">CHF 00.00</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+            try { lucide.createIcons(); } catch (e) { /* ignore if lucide fails */ }
+        }
+
+        // --- Config ---
+        const BASE_WAGE_CHF = 23.50; 
+        const COSTS = {
+            ahv: 5.30,   
+            fak: 1.03,   
+            bu: 0.50,    
+            admin: 15.53 
+        };
+
+        const FREQUENCY_MULTIPLIERS = {
+            'monthly': 1,
+            'twice_monthly': 2,
+            'weekly': 4.33
+        };
+
+        // --- Elements ---
+        const hoursInput = document.getElementById('hours-input');
+        const hoursDisplay = document.getElementById('hours-display');
+        const sliderProgress = document.getElementById('slider-progress');
+        const sliderBubble = document.getElementById('slider-bubble');
+        const appointmentsDisplay = document.getElementById('appointments-display');
+        
+        // Output Elements
+        const batmaidTotalEl = document.getElementById('batmaid-total');
+        const suuberTotalEl = document.getElementById('suuber-total');
+        const batmaidHourlyEl = document.getElementById('batmaid-hourly');
+        const suuberHourlyEl = document.getElementById('suuber-hourly');
+
+        // --- Logic ---
+
+        function calculatePrices() {
+            const hours = hoursInput ? parseFloat(hoursInput.value) : 3;
+            const freqEl = document.querySelector('input[name="frequency"]:checked');
+            const subEl = document.querySelector('input[name="subscription"]:checked');
+            const frequencyKey = freqEl ? freqEl.value : 'weekly';
+            const subscriptionKey = subEl ? subEl.value : '12_months';
+            
+            const multiplier = FREQUENCY_MULTIPLIERS[frequencyKey] || FREQUENCY_MULTIPLIERS['weekly'];
+
+            // 1. Hourly Rate Calculations
+            
+            // SUUBER Hourly
+            // Formula: Base * (1 + sum_of_percentages)
+            const suuberHourly = BASE_WAGE_CHF * (1 + (COSTS.ahv + COSTS.fak + COSTS.bu + COSTS.admin) / 100);
+
+            // Batmaid Hourly
+            let batmaidHourly = 35.00; // Standard 12-month rate assumption
+            
+            // Subscription Logic (Estimated based on standard practices)
+            if (subscriptionKey === 'flexible') batmaidHourly += 7;
+            else if (subscriptionKey === '3_months') batmaidHourly += 3;
+            
+            // Frequency Logic (Less frequent is often more expensive per hour)
+            if (frequencyKey === 'monthly') batmaidHourly += 2;
+            else if (frequencyKey === 'twice_monthly') batmaidHourly += 1;
+
+            // 2. Total (Monthly) Cost Calculation
+            // Total = Hourly Rate * Hours Per Visit * Visits Per Month
+            const suuberTotal = suuberHourly * hours * multiplier;
+            const batmaidTotal = batmaidHourly * hours * multiplier;
+
+            // 3. Update UI
+            const fmt = (val) => {
+                try {
+                    return new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' }).format(val);
+                } catch (e) {
+                    return 'CHF ' + val.toFixed(2);
+                }
+            };
+
+            if (suuberHourlyEl) suuberHourlyEl.textContent = fmt(suuberHourly);
+            if (batmaidHourlyEl) batmaidHourlyEl.textContent = fmt(batmaidHourly);
+            
+            if (suuberTotalEl) suuberTotalEl.textContent = fmt(suuberTotal);
+            if (batmaidTotalEl) batmaidTotalEl.textContent = fmt(batmaidTotal);
+        }
+
+        function updateSliderVisuals() {
+            const min = parseFloat(hoursInput.min);
+            const max = parseFloat(hoursInput.max);
+            const val = parseFloat(hoursInput.value);
+            const percentage = ((val - min) / (max - min)) * 100;
+            
+            sliderProgress.style.width = `${percentage}%`;
+            sliderBubble.style.left = `${percentage}%`;
+            hoursDisplay.textContent = val;
+        }
+
+        function updateAppointmentsText() {
+            const frequency = document.querySelector('input[name="frequency"]:checked').value;
+            appointmentsDisplay.textContent = FREQUENCY_MULTIPLIERS[frequency];
+        }
+
+        // Listeners
+        hoursInput.addEventListener('input', () => { updateSliderVisuals(); calculatePrices(); });
+        
+        document.querySelectorAll('input[name="frequency"]').forEach(r => {
+            r.addEventListener('change', () => { updateAppointmentsText(); calculatePrices(); });
+        });
+
+        document.querySelectorAll('input[name="subscription"]').forEach(r => {
+            r.addEventListener('change', () => { calculatePrices(); });
+        });
+
+        // Init
+        updateSliderVisuals();
+        updateAppointmentsText();
+        calculatePrices();
+
+    </script>
+</body>
+</html>
