@@ -341,6 +341,82 @@
         .stat-label { color: #475569; font-weight: 500; }
         .stat-value { color: #0f172a; font-weight: 700; }
 
+        /* Markdown Styling */
+        .gemini-content h1, .gemini-content h2, .gemini-content h3 {
+            font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: 700;
+        }
+        .gemini-content ul { padding-left: 1.25rem; list-style-type: disc; margin-bottom: 1rem; }
+        .gemini-content li { margin-bottom: 0.25rem; font-size: 0.875rem; color: #334155; }
+        .gemini-content p { margin-bottom: 0.75rem; font-size: 0.875rem; color: #334155; }
+        .gemini-content strong { color: #0f172a; }
+
+        /* --- Loading Shimmer --- */
+        .loading-container {
+            margin-top: 1.5rem;
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .shimmer-line {
+            height: 1rem;
+            background: #f1f5f9;
+            border-radius: 0.25rem;
+            background: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite linear;
+        }
+        .shimmer-w-75 { width: 75%; }
+        .shimmer-w-50 { width: 50%; }
+        .shimmer-w-85 { width: 85%; }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        .hidden { display: none; }
+        
+        .breakdown-details {
+            margin-top: 1.25rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        details summary {
+            list-style: none;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.7;
+            display: flex;
+            align-items: center;
+        }
+        
+        details summary:hover { opacity: 1; }
+        
+        .breakdown-content {
+            font-family: monospace;
+            font-size: 0.75rem;
+            background-color: rgba(255,255,255,0.3);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-top: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .breakdown-row {
+            display: flex;
+            justify-content: space-between;
+        }
     </style>
 </head>
 <body>
@@ -368,7 +444,7 @@
                         <span id="hours-display">3</span>
                     </div>
 
-                    <input type="range" id="hours-input" min="2" max="8" step="1" value="3">
+                    <input type="range" id="hours-input" min="2" max="8" step="0.5" value="3">
                 </div>
 
                 <div class="slider-labels">
@@ -454,6 +530,18 @@
                     <div class="card-title">SUUBER</div>
                     <p class="price-label">Total Cost (Monthly)</p>
                     <div class="card-price" id="suuber-total">CHF 00.00</div>
+                    
+                    <!-- Breakdown for SUUBER -->
+                    <div class="breakdown-details">
+                        <details>
+                            <summary><i data-lucide="info" style="width:14px; margin-right:6px;"></i> Calculation Breakdown</summary>
+                            <div class="breakdown-content">
+                                <div class="breakdown-row"><span>Base Wage (Net):</span> <span>CHF 24.00</span></div>
+                                <div class="breakdown-row" style="color:#064e3b"><span>+ Social Costs (~6.8%):</span> <span id="calc-socials">CHF 1.64</span></div>
+                                <div class="breakdown-row" style="color:#312e81; font-weight:bold; border-top:1px solid rgba(0,0,0,0.1); margin-top:4px; padding-top:4px;"><span>+ Admin/Ins. (~23.5%):</span> <span id="calc-admin">CHF 5.65</span></div>
+                            </div>
+                        </details>
+                    </div>
                 </div>
             </div>
 
@@ -471,20 +559,21 @@
 
         </div>
     </div>
+    
+    <!-- Footer Note -->
+    <p style="max-width: 1024px; margin: 1rem auto 2rem auto; font-size: 0.75rem; color: #64748b; text-align: center; padding: 0 1rem;">
+        For comparison purposes, the net salary was set to CHF 24 / h. SUUBER users usually pay higher salaries.
+    </p>
 
     <script>
-        if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
-            try { lucide.createIcons(); } catch (e) { /* ignore if lucide fails */ }
-        }
+        lucide.createIcons();
 
         // --- Config ---
-        const BASE_WAGE_CHF = 23.50; 
-        const COSTS = {
-            ahv: 5.30,   
-            fak: 1.03,   
-            bu: 0.50,    
-            admin: 15.53 
-        };
+        const SUUBER_FIXED_HOURLY = 31.29; 
+        const SUUBER_NET_BASE = 24.00;
+        
+        // Social percentages for breakdown visualization only
+        const SOCIAL_PCT = 5.3 + 1.03 + 0.5; // AHV + FAK + BU = 6.83%
 
         const FREQUENCY_MULTIPLIERS = {
             'monthly': 1,
@@ -504,54 +593,60 @@
         const suuberTotalEl = document.getElementById('suuber-total');
         const batmaidHourlyEl = document.getElementById('batmaid-hourly');
         const suuberHourlyEl = document.getElementById('suuber-hourly');
+        
+        // Breakdown Elements
+        const calcSocials = document.getElementById('calc-socials');
+        const calcAdmin = document.getElementById('calc-admin');
+
+        // Gemini Elements
+        const geminiResult = document.getElementById('gemini-result');
+        const geminiContent = document.getElementById('gemini-content');
+        const geminiLoading = document.getElementById('gemini-loading');
 
         // --- Logic ---
 
         function calculatePrices() {
-            const hours = hoursInput ? parseFloat(hoursInput.value) : 3;
-            const freqEl = document.querySelector('input[name="frequency"]:checked');
-            const subEl = document.querySelector('input[name="subscription"]:checked');
-            const frequencyKey = freqEl ? freqEl.value : 'weekly';
-            const subscriptionKey = subEl ? subEl.value : '12_months';
+            const hours = parseFloat(hoursInput.value);
+            const frequencyKey = document.querySelector('input[name="frequency"]:checked').value;
+            // Subscription is visual only now, but we keep the logic structure if needed later
+            // const subscriptionKey = document.querySelector('input[name="subscription"]:checked').value;
             
-            const multiplier = FREQUENCY_MULTIPLIERS[frequencyKey] || FREQUENCY_MULTIPLIERS['weekly'];
+            const multiplier = FREQUENCY_MULTIPLIERS[frequencyKey];
 
             // 1. Hourly Rate Calculations
             
-            // SUUBER Hourly
-            // Formula: Base * (1 + sum_of_percentages)
-            const suuberHourly = BASE_WAGE_CHF * (1 + (COSTS.ahv + COSTS.fak + COSTS.bu + COSTS.admin) / 100);
+            // SUUBER: Fixed at 31.29
+            const suuberHourly = SUUBER_FIXED_HOURLY;
+            
+            // Update Breakdown visuals
+            const socialsVal = SUUBER_NET_BASE * (SOCIAL_PCT / 100);
+            const adminVal = suuberHourly - SUUBER_NET_BASE - socialsVal; // Remainder
+            
+            const fmt = (val) => new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' }).format(val);
+            
+            calcSocials.textContent = fmt(socialsVal);
+            calcAdmin.textContent = fmt(adminVal);
 
-            // Batmaid Hourly
-            let batmaidHourly = 35.00; // Standard 12-month rate assumption
-            
-            // Subscription Logic (Estimated based on standard practices)
-            if (subscriptionKey === 'flexible') batmaidHourly += 7;
-            else if (subscriptionKey === '3_months') batmaidHourly += 3;
-            
-            // Frequency Logic (Less frequent is often more expensive per hour)
-            if (frequencyKey === 'monthly') batmaidHourly += 2;
-            else if (frequencyKey === 'twice_monthly') batmaidHourly += 1;
+            // Batmaid Logic
+            // Every 4 weeks (monthly) -> 47.90
+            // Every 2 weeks or weekly -> 43.90
+            let batmaidHourly = 0;
+            if (frequencyKey === 'monthly') {
+                batmaidHourly = 47.90;
+            } else {
+                batmaidHourly = 43.90;
+            }
 
             // 2. Total (Monthly) Cost Calculation
-            // Total = Hourly Rate * Hours Per Visit * Visits Per Month
             const suuberTotal = suuberHourly * hours * multiplier;
             const batmaidTotal = batmaidHourly * hours * multiplier;
 
             // 3. Update UI
-            const fmt = (val) => {
-                try {
-                    return new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' }).format(val);
-                } catch (e) {
-                    return 'CHF ' + val.toFixed(2);
-                }
-            };
-
-            if (suuberHourlyEl) suuberHourlyEl.textContent = fmt(suuberHourly);
-            if (batmaidHourlyEl) batmaidHourlyEl.textContent = fmt(batmaidHourly);
+            suuberHourlyEl.textContent = fmt(suuberHourly);
+            batmaidHourlyEl.textContent = fmt(batmaidHourly);
             
-            if (suuberTotalEl) suuberTotalEl.textContent = fmt(suuberTotal);
-            if (batmaidTotalEl) batmaidTotalEl.textContent = fmt(batmaidTotal);
+            suuberTotalEl.textContent = fmt(suuberTotal);
+            batmaidTotalEl.textContent = fmt(batmaidTotal);
         }
 
         function updateSliderVisuals() {
