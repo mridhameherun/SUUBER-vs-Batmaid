@@ -540,199 +540,209 @@
   </div>
 
   <script>
-    lucide.createIcons();
+  lucide.createIcons();
 
-    // ---------- CONFIG ----------
+  // ---------- CONFIG ----------
 
-    // SUUBER percentages (on net salary)
-    const S_P_AHV = 10.55;
-    const S_P_ALV = 2.2;
-    const S_P_FAK = 2.3;
-    const S_ADMIN_PCT = 5.0; // of AHV amount
+  // SUUBER percentages (on net salary)
+  const S_P_AHV = 10.55;
+  const S_P_ALV = 2.2;
+  const S_P_FAK = 2.3;
+  const S_ADMIN_PCT = 5.0; // of AHV amount
 
-    // SUUBER fixed fees per hour
-    const S_FIXED_PER_HOUR = 0.6 + 0.75 + 0.75 + 1.4;
+  // SUUBER fixed fees per hour
+  const S_FIXED_PER_HOUR = 0.6 + 0.75 + 0.75 + 1.4;
 
-    // Batmaid breakdown from screenshot (Zurich, frequent cleaning hour)
-    const B_GROSS_SALARY = 24.75;
-    const B_SOCIAL = 3.61;
-    const B_LOSS_EARNINGS = 2.53;
-    const B_VAT_FEES = 4.0;
-    const B_OPERATIONS = 8.2;
-    const B_PROFIT = 0.81;
+  // Batmaid: cleaner net salary (fixed, for info)
+  const BATMAID_NET = 24.0;
 
-    const BATMAID_HOURLY =
-      B_GROSS_SALARY +
-      B_SOCIAL +
-      B_LOSS_EARNINGS +
-      B_VAT_FEES +
-      B_OPERATIONS +
-      B_PROFIT; // = 43.90
+  // Batmaid breakdown from screenshot (Zurich, frequent cleaning hour)
+  const B_GROSS_SALARY = 24.75;
+  const B_SOCIAL = 3.61;
+  const B_LOSS_EARNINGS = 2.53;
+  const B_VAT_FEES = 4.0;
+  const B_OPERATIONS = 8.2;
+  const B_PROFIT = 0.81;
 
-    // appointments per month
-    const VISITS_PER_MONTH = {
-      monthly: 1,
-      twice_monthly: 2,
-      weekly: 4, // client: once a week = 4x per month
-    };
+  // Frequent cleaning hourly (weekly / twice_monthly)
+  const BATMAID_HOURLY_FREQUENT =
+    B_GROSS_SALARY +
+    B_SOCIAL +
+    B_LOSS_EARNINGS +
+    B_VAT_FEES +
+    B_OPERATIONS +
+    B_PROFIT; // = 43.90
 
-    // ---------- ELEMENTS ----------
-    const salaryInput = document.getElementById("salary-input");
-    const hoursInput = document.getElementById("hours-input");
+  // Once-per-month price
+  const BATMAID_HOURLY_MONTHLY = 47.9;
 
-    const bubbleSalary = document.getElementById("bubble-salary");
-    const trackSalary = document.getElementById("track-bg-salary");
+  // appointments per month
+  const VISITS_PER_MONTH = {
+    monthly: 1,
+    twice_monthly: 2,
+    weekly: 4, // once a week = 4x per month
+  };
 
-    const bubbleHours = document.getElementById("bubble-hours");
-    const trackHours = document.getElementById("track-bg-hours");
+  // ---------- ELEMENTS ----------
+  const salaryInput = document.getElementById("salary-input");
+  const hoursInput = document.getElementById("hours-input");
 
-    const appointmentsDisplay = document.getElementById(
-      "appointments-display"
+  const bubbleSalary = document.getElementById("bubble-salary");
+  const trackSalary = document.getElementById("track-bg-salary");
+
+  const bubbleHours = document.getElementById("bubble-hours");
+  const trackHours = document.getElementById("track-bg-hours");
+
+  const appointmentsDisplay = document.getElementById("appointments-display");
+
+  const batmaidMonthlyEl = document.getElementById("batmaid-monthly");
+  const suuberMonthlyEl = document.getElementById("suuber-monthly");
+
+  const batmaidRateEl = document.getElementById("batmaid-hourly-rate");
+  const suuberRateEl = document.getElementById("suuber-hourly-rate");
+
+  const suuberBreakdownContent = document.getElementById(
+    "suuber-breakdown-content"
+  );
+
+  const fmt = (val) =>
+    new Intl.NumberFormat("de-CH", {
+      style: "currency",
+      currency: "CHF",
+    }).format(val);
+
+  // ---------- CORE CALC ----------
+  function calculatePrices() {
+    const netSalary = parseFloat(salaryInput.value) || 0; // SUUBER net
+    const hoursPerVisit = parseFloat(hoursInput.value) || 0;
+    const freqInput = document.querySelector(
+      'input[name="frequency"]:checked'
     );
+    const frequencyKey = freqInput ? freqInput.value : "weekly";
 
-    const batmaidMonthlyEl = document.getElementById("batmaid-monthly");
-    const suuberMonthlyEl = document.getElementById("suuber-monthly");
+    const visitsPerMonth = VISITS_PER_MONTH[frequencyKey] || 0;
+    appointmentsDisplay.textContent = String(visitsPerMonth);
 
-    const batmaidRateEl = document.getElementById("batmaid-hourly-rate");
-    const suuberRateEl = document.getElementById("suuber-hourly-rate");
+    const monthlyHours = hoursPerVisit * visitsPerMonth;
 
-    const suuberBreakdownContent = document.getElementById(
-      "suuber-breakdown-content"
-    );
-
-    const fmt = (val) =>
-      new Intl.NumberFormat("de-CH", {
-        style: "currency",
-        currency: "CHF",
-      }).format(val);
-
-    // ---------- CORE CALC ----------
-    function calculatePrices() {
-      const netSalary = parseFloat(salaryInput.value) || 0;
-      const hoursPerVisit = parseFloat(hoursInput.value) || 0;
-      const freqInput = document.querySelector(
-        'input[name="frequency"]:checked'
-      );
-      const frequencyKey = freqInput ? freqInput.value : "weekly";
-
-      const visitsPerMonth = VISITS_PER_MONTH[frequencyKey] || 0;
-      appointmentsDisplay.textContent = String(visitsPerMonth);
-
-      const monthlyHours = hoursPerVisit * visitsPerMonth;
-
-      if (!netSalary || !hoursPerVisit || monthlyHours <= 0) {
-        batmaidMonthlyEl.textContent = fmt(0);
-        suuberMonthlyEl.textContent = fmt(0);
-        batmaidRateEl.textContent = fmt(0);
-        suuberRateEl.textContent = fmt(0);
-        suuberBreakdownContent.innerHTML = "";
-        return;
-      }
-
-      // SUUBER
-      const s_AhvVal = netSalary * (S_P_AHV / 100);
-      const s_AlvVal = netSalary * (S_P_ALV / 100);
-      const s_FakVal = netSalary * (S_P_FAK / 100);
-      const s_AdminVal = s_AhvVal * (S_ADMIN_PCT / 100);
-
-      const suuberHourly =
-        netSalary +
-        s_AhvVal +
-        s_AlvVal +
-        s_FakVal +
-        s_AdminVal +
-        S_FIXED_PER_HOUR;
-
-      const suuberMonthly = suuberHourly * monthlyHours;
-
-      // Batmaid (fixed 43.90/h)
-      const batmaidHourly = BATMAID_HOURLY;
-      const batmaidMonthly = batmaidHourly * monthlyHours;
-
-      // Update UI
-      suuberRateEl.textContent = fmt(suuberHourly);
-      batmaidRateEl.textContent = fmt(batmaidHourly);
-
-      suuberMonthlyEl.textContent = fmt(suuberMonthly);
-      batmaidMonthlyEl.textContent = fmt(batmaidMonthly);
-
-      // SUUBER breakdown
-      suuberBreakdownContent.innerHTML = `
-        <div class="breakdown-row">
-          <span>Base Net Salary (SUUBER)</span>
-          <span>CHF ${netSalary.toFixed(2)}</span>
-        </div>
-        <div class="breakdown-subrow">
-          <span>+ AHV/IV/EO (${S_P_AHV}%)</span>
-          <span>${s_AhvVal.toFixed(2)}</span>
-        </div>
-        <div class="breakdown-subrow">
-          <span>+ ALV (${S_P_ALV.toFixed(2)}%)</span>
-          <span>${s_AlvVal.toFixed(2)}</span>
-        </div>
-        <div class="breakdown-subrow">
-          <span>+ FAK (~${S_P_FAK}%)</span>
-          <span>${s_FakVal.toFixed(2)}</span>
-        </div>
-        <div class="breakdown-subrow">
-          <span>+ Admin (5% of AHV)</span>
-          <span>${s_AdminVal.toFixed(2)}</span>
-        </div>
-        <div class="breakdown-divider"></div>
-        <div class="breakdown-subrow">
-          <span>+ Accident Ins.</span>
-          <span>0.60</span>
-        </div>
-        <div class="breakdown-subrow">
-          <span>+ KTG</span>
-          <span>0.75</span>
-        </div>
-        <div class="breakdown-subrow">
-          <span>+ Liability</span>
-          <span>0.75</span>
-        </div>
-        <div class="breakdown-subrow">
-          <span>+ Service Fee</span>
-          <span>1.40</span>
-        </div>
-        <div class="breakdown-divider"></div>
-        <div class="breakdown-row" style="color:#0f172a">
-          <span>Total Hourly (SUUBER)</span>
-          <span>${fmt(suuberHourly)}</span>
-        </div>
-      `;
+    if (!netSalary || !hoursPerVisit || monthlyHours <= 0) {
+      batmaidMonthlyEl.textContent = fmt(0);
+      suuberMonthlyEl.textContent = fmt(0);
+      batmaidRateEl.textContent = fmt(0);
+      suuberRateEl.textContent = fmt(0);
+      suuberBreakdownContent.innerHTML = "";
+      return;
     }
 
-    // ---------- SLIDER VISUALS ----------
-    function updateSlider(input, bubble, track) {
-      const min = parseFloat(input.min);
-      const max = parseFloat(input.max);
-      const val = parseFloat(input.value);
-      const percentage = ((val - min) / (max - min)) * 100;
+    // ----- SUUBER -----
+    const s_AhvVal = netSalary * (S_P_AHV / 100);
+    const s_AlvVal = netSalary * (S_P_ALV / 100);
+    const s_FakVal = netSalary * (S_P_FAK / 100);
+    const s_AdminVal = s_AhvVal * (S_ADMIN_PCT / 100);
 
-      track.style.width = `${percentage}%`;
-      bubble.style.left = `${percentage}%`;
-      bubble.textContent = val;
-    }
+    const suuberHourly =
+      netSalary +
+      s_AhvVal +
+      s_AlvVal +
+      s_FakVal +
+      s_AdminVal +
+      S_FIXED_PER_HOUR;
 
-    salaryInput.addEventListener("input", () => {
-      updateSlider(salaryInput, bubbleSalary, trackSalary);
-      calculatePrices();
-    });
+    const suuberMonthly = suuberHourly * monthlyHours;
 
-    hoursInput.addEventListener("input", () => {
-      updateSlider(hoursInput, bubbleHours, trackHours);
-      calculatePrices();
-    });
+    // ----- BATMAID -----
+    // 43.90/h for frequent cleanings, 47.90/h if only once per month
+    const batmaidHourly =
+      frequencyKey === "monthly"
+        ? BATMAID_HOURLY_MONTHLY
+        : BATMAID_HOURLY_FREQUENT;
 
-    document
-      .querySelectorAll('input[name="frequency"]')
-      .forEach((r) => r.addEventListener("change", calculatePrices));
+    const batmaidMonthly = batmaidHourly * monthlyHours;
 
-    // init
+    // Update UI
+    suuberRateEl.textContent = fmt(suuberHourly);
+    batmaidRateEl.textContent = fmt(batmaidHourly);
+
+    suuberMonthlyEl.textContent = fmt(suuberMonthly);
+    batmaidMonthlyEl.textContent = fmt(batmaidMonthly);
+
+    // SUUBER breakdown
+    suuberBreakdownContent.innerHTML = `
+      <div class="breakdown-row">
+        <span>Base Net Salary (SUUBER)</span>
+        <span>CHF ${netSalary.toFixed(2)}</span>
+      </div>
+      <div class="breakdown-subrow">
+        <span>+ AHV/IV/EO (${S_P_AHV}%)</span>
+        <span>${s_AhvVal.toFixed(2)}</span>
+      </div>
+      <div class="breakdown-subrow">
+        <span>+ ALV (${S_P_ALV.toFixed(2)}%)</span>
+        <span>${s_AlvVal.toFixed(2)}</span>
+      </div>
+      <div class="breakdown-subrow">
+        <span>+ FAK (~${S_P_FAK}%)</span>
+        <span>${s_FakVal.toFixed(2)}</span>
+      </div>
+      <div class="breakdown-subrow">
+        <span>+ Admin (5% of AHV)</span>
+        <span>${s_AdminVal.toFixed(2)}</span>
+      </div>
+      <div class="breakdown-divider"></div>
+      <div class="breakdown-subrow">
+        <span>+ Accident Ins.</span>
+        <span>0.60</span>
+      </div>
+      <div class="breakdown-subrow">
+        <span>+ KTG</span>
+        <span>0.75</span>
+      </div>
+      <div class="breakdown-subrow">
+        <span>+ Liability</span>
+        <span>0.75</span>
+      </div>
+      <div class="breakdown-subrow">
+        <span>+ Service Fee</span>
+        <span>1.40</span>
+      </div>
+      <div class="breakdown-divider"></div>
+      <div class="breakdown-row" style="color:#0f172a">
+        <span>Total Hourly (SUUBER)</span>
+        <span>${fmt(suuberHourly)}</span>
+      </div>
+    `;
+  }
+
+  // ---------- SLIDER VISUALS ----------
+  function updateSlider(input, bubble, track) {
+    const min = parseFloat(input.min);
+    const max = parseFloat(input.max);
+    const val = parseFloat(input.value);
+    const percentage = ((val - min) / (max - min)) * 100;
+
+    track.style.width = `${percentage}%`;
+    bubble.style.left = `${percentage}%`;
+    bubble.textContent = val;
+  }
+
+  salaryInput.addEventListener("input", () => {
     updateSlider(salaryInput, bubbleSalary, trackSalary);
+    calculatePrices();
+  });
+
+  hoursInput.addEventListener("input", () => {
     updateSlider(hoursInput, bubbleHours, trackHours);
     calculatePrices();
-  </script>
+  });
+
+  document
+    .querySelectorAll('input[name="frequency"]')
+    .forEach((r) => r.addEventListener("change", calculatePrices));
+
+  // init
+  updateSlider(salaryInput, bubbleSalary, trackSalary);
+  updateSlider(hoursInput, bubbleHours, trackHours);
+  calculatePrices();
+</script>
 </body>
 </html>
